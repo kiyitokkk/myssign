@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">米游社助手</string>
+    <string name="xqtd">星穹铁道</string>
+    <string name="uid">添加原神uid</string>
+    <string name="uidt">添加铁道uid</string>
+    <string name="cookie">添加cookie</string>
+    <string name="genshin">原神</string>
+</resources>
