@@ -1,42 +1,21 @@
 package com.example.mys;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.work.Constraints;
-import androidx.work.Data;
-import androidx.work.ExistingWorkPolicy;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
-import androidx.work.Worker;
 
-import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.Switch;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Calendar;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -46,192 +25,176 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
 public class MainActivity extends AppCompatActivity {
-    private Button mys;
-    private Button xqtd;
     private Handler mHandler = new Handler(Looper.getMainLooper());
-    private Switch mysSwitch;
-    private Switch xqtdSwitch;
-    private WorkManager workManager;
+
     private SharedPreferences sharedPreferences;
     private NotificationHelper notificationHelper ;
     private  SharedPreferences sharedPreferences1;
-    private Button addcookie;
-    private Button addgenshin;
-    private Button addxqtd;
     private static Context context;
-    SharedPreferences mysharedPreferences ;
-    SharedPreferences.Editor myeditor ;
-
-    // 读取标志位的值
-    boolean isGenshinExecuted ;
-    boolean isXqtdExecuted ;
-    @SuppressLint("MissingInflatedId")
+    private static final int CONNECT_TIMEOUT = 40;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mys = findViewById(R.id.genshin);
-        xqtd = findViewById(R.id.xqtd);
-        mysSwitch = findViewById(R.id.mysSwitch);
-        xqtdSwitch = findViewById(R.id.xqtdSwitch);
-        addcookie = findViewById(R.id.addcookie);
-        addgenshin = findViewById(R.id.addgenshin);
-        addxqtd = findViewById(R.id.addxqtd);
-        context = this;
-        mysharedPreferences = getSharedPreferences("MyPref", Context.MODE_PRIVATE);
-        isGenshinExecuted = mysharedPreferences.getBoolean("isGenshinExecuted", false);
-        isXqtdExecuted = mysharedPreferences.getBoolean("isXqtdExecuted", false);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence channelName = "Channel Name";
-            String channelDescription = "Channel Description";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel("channel_id2", channelName, importance);
-            channel.setDescription(channelDescription);
-            // 将通道添加到通知管理器
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-            String channelId1 = "channel_id";
-            String channelName1 = "Channel Name";
-            int importance1 = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel notificationChannel1 = new NotificationChannel(channelId1, channelName1, importance1);
-            notificationChannel1.setDescription("Channel Description");
-// 注册通知通道
-            NotificationManager notificationManager1 = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager1.createNotificationChannel(notificationChannel1);
-        }
+        genshin();
+        Log.e( "onCreate: ", "ssss");
+//        if (Objects.equals(getIntent().getAction(), Intent.ACTION_MAIN)
+//                && getIntent().hasCategory(Intent.CATEGORY_LAUNCHER)) {
+//
+//            if (Objects.equals(getIntent().getAction(), "android.intent.action.VIEW")) {
+//                genshin();
+//                xqtd();
+//            }
+//            finish();
+//            return;
+//        }
+    }
+    public void genshin() {
         sharedPreferences = getSharedPreferences("button_states", MODE_PRIVATE);
-        mysSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // 保存开关状态到SharedPreferences
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean("mysSwitchState", isChecked);
-            editor.apply();
-        });
-        xqtdSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // 保存开关状态到SharedPreferences
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean("xqtdSwitchState", isChecked);
-            editor.apply();
-        });
-        mys.setOnClickListener(v -> new Thread(() -> {
+
+        boolean mysSwitchState = sharedPreferences.getBoolean("mysSwitchState", false);
+
+        if (mysSwitchState) {
             SharedPreferences sharedPreferences = context.getSharedPreferences("genshin", Context.MODE_PRIVATE);
             SharedPreferences sharedPreferencesc = context.getSharedPreferences("cookie", Context.MODE_PRIVATE);
             String genshinuid = sharedPreferences.getString("genshin", "uid is null");
             String cookie = sharedPreferencesc.getString("cookie", "null");
-            String result = MyWorker.Genshin(genshinuid, cookie, context);
-            mHandler.post(() -> {
-                notificationHelper = new NotificationHelper(MainActivity.this);
-                notificationHelper.showNotification("原神", result );
+            String result = Genshin(genshinuid, cookie, context);
+            notificationHelper = new NotificationHelper(MainActivity.this);
+            notificationHelper.showNotification("原神", result );
+        }
+    }
+    public void xqtd() {
+        sharedPreferences = getSharedPreferences("button_states", MODE_PRIVATE);
+        boolean xqtdSwitchState = sharedPreferences.getBoolean("xqtdSwitchState", false);
 
-            });
-        }).start());
-        xqtd.setOnClickListener(v -> new Thread(() -> {
+        if (xqtdSwitchState) {
             SharedPreferences sharedPreferences = context.getSharedPreferences("xqtd", Context.MODE_PRIVATE);
             SharedPreferences sharedPreferencesc = context.getSharedPreferences("cookie", Context.MODE_PRIVATE);
             String xqtduid = sharedPreferences.getString("xqtd", "uid is null");
             String cookie = sharedPreferencesc.getString("cookie", "null");
-            String result = MyWorker.Xqtd(xqtduid, cookie, context);
+            String result = Xqtd(xqtduid, cookie, context);
             notificationHelper = new NotificationHelper(MainActivity.this);
             mHandler.post(() -> notificationHelper.showNotification1("星穹铁道", result  ));
-        }).start());
-        addcookie.setOnClickListener(v -> MyDialog.showInputDialog(MainActivity.this));
-        addgenshin.setOnClickListener(v -> MyDialog.showInputDialoggenshin(MainActivity.this));
-        addxqtd.setOnClickListener(v -> MyDialog.showInputDialogxqtd(MainActivity.this));
+        }
     }
-    public void genshin() {
-        boolean mysSwitchState = sharedPreferences.getBoolean("mysSwitchState", false);
-        if (mysSwitchState) {
-                Constraints constraints = new Constraints.Builder()
-                        .setRequiresDeviceIdle(false)
-                        .setRequiresCharging(false)
-                        .build();
-                Calendar calendar = Calendar.getInstance();
-                calendar.set(Calendar.HOUR_OF_DAY, 0);
-                calendar.set(Calendar.MINUTE, 0);
-                calendar.set(Calendar.SECOND, 0);
-                long triggerTime = calendar.getTimeInMillis();
-                long delay = triggerTime - System.currentTimeMillis();
-                // 构建输入数据
-                Data inputData = new Data.Builder()
-                        .putString("operation", "operation1")
-                        .build();
-                OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(MyWorker.class)
-                        .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-                        .setConstraints(constraints)
-                        .setInputData(inputData)
-                        .build();
-                WorkManager.getInstance(this).enqueueUniqueWork("genshin_work", ExistingWorkPolicy.REPLACE, workRequest);
 
-        } else {
-            // 取消工作请求
-            WorkManager.getInstance(this).cancelUniqueWork("genshin_work");
-        }
-    }
-    public void xqtd() {
-        boolean xqtdSwitchState = sharedPreferences.getBoolean("xqtdSwitchState", false);
-        if (xqtdSwitchState) {
-                Constraints constraints = new Constraints.Builder()
-                        .setRequiresDeviceIdle(false)
-                        .setRequiresCharging(false)
-                        .build();
-                Calendar calendar = Calendar.getInstance();
-                calendar.set(Calendar.HOUR_OF_DAY, 0);
-                calendar.set(Calendar.MINUTE, 0);
-                calendar.set(Calendar.SECOND, 0);
-                long triggerTime = calendar.getTimeInMillis();
-                long delay = triggerTime - System.currentTimeMillis();
+    protected static String Genshin(String uid, String cookie, Context context) {
+        String url = "https://api-takumi.mihoyo.com/event/bbs_sign_reward/sign";
+        String[] arr = {"c78eik", "5inm7p", "edm91m", "9k18gf", "0hh40n", "ojk2g2", "ag55ec", "80d6la"};
+        long t = System.currentTimeMillis() / 1000;
+        String salt = "QCRgj6bHHQvS0Rz03loexYSXpuiO3DZ6";
+        Random random = new Random();
+        String r = arr[random.nextInt(8)];
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                .build();
+        MediaType mediaType = MediaType.parse("application/json;charset=UTF-8");
+        String device_model = Build.MODEL;
+        String device = Build.MANUFACTURER + ' ' + Build.MODEL;
+        String ds = getDS(salt, t, r);
+        String requestBodyJson = String.format("{\"act_id\":\"e202009291139501\",\"region\":\"cn_gf01\",\"uid\":\"%s\"}", uid);
+        Log.e("chen",requestBodyJson);
+        RequestBody body = RequestBody.create(mediaType, requestBodyJson);
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .header("Host", "api-takumi.mihoyo.com")
+                .addHeader("DS", ds)
+                .header("Connection", "keep-alive")
+                .header("x-rpc-platform", "android")
+                .header("Origin", "https://webstatic.mihoyo.com")
+                .header("x-rpc-device_model", device_model)
+                .header("Sec-Fetch-Dest", "empty")
+                .header("x-rpc-device_name", device)
+                .header("x-rpc-device_fp", RandomStringGenerator.readRandomString(context))
+                .header("x-rpc-client_type", "5")
+                .header("x-rpc-app_version", "2.52.1")
+                .header("User-Agent", "Mozilla/5.0 (Linux; " + "Android " +  Build.VERSION.RELEASE  + "; " +  Build.MODEL + " Build/" + Build.ID + ";wv" + ") AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/92.0.4515.131 Mobile Safari/537.36 miHoYoBBS/2.52.1")
+                .header("x-rpc-device_id", RandomStringGenerator.getUUID(context))
+                .header("Accept", "application/json, text/plain, */*")
+                .header("x-rpc-channel", "huawei")
+                .header("Content-Type", "application/json;charset=UTF-8")
+                .header("x-rpc-sys_version", "9")
+                .header("X-Requested-With", "com.mihoyo.hyperion")
+                .header("Sec-Fetch-Site", "same-site")
+                .header("Sec-Fetch-Mode", "cors")
+                .header("Referer", "https://webstatic.mihoyo.com/bbs/event/signin/hkrpg/e202304121516551.html?bbs_auth_required=true&act_id=e202304121516551&bbs_auth_required=true&bbs_presentation_style=fullscreen&utm_source=bbs&utm_medium=mys&utm_campaign=icon")
+                .header("Accept-Language", "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7")
+                .addHeader("Cookie", cookie)
+                .build();
+        try {
+            Response response = client.newCall(request).execute();
+            String responseData = response.body().string();
 
-                // 构建输入数据
-                Data inputData = new Data.Builder()
-                        .putString("operation", "operation2")
-                        .build();
-                // 创建工作请求
-                OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(MyWorker.class)
-                        .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-                        .setConstraints(constraints)
-                        .setInputData(inputData)
-                        .build();
-                WorkManager.getInstance(this).enqueueUniqueWork("xqtd_work", ExistingWorkPolicy.REPLACE, workRequest);
-        } else {
-            // 取消工作请求
-            WorkManager.getInstance(this).cancelUniqueWork("xqtd_work");
+            return responseData;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        return "发生错误";
     }
-    @Override
-    protected void onResume() {
-        super.onResume();
-        boolean mysSwitchState = sharedPreferences.getBoolean("mysSwitchState", false);
-        boolean xqtdSwitchState = sharedPreferences.getBoolean("xqtdSwitchState", false);
-        mysSwitch.setChecked(mysSwitchState);
-        xqtdSwitch.setChecked(xqtdSwitchState);
-        WorkManager.getInstance(this).cancelUniqueWork("genshin_work");
-        WorkManager.getInstance(this).cancelUniqueWork("xqtd_work");
-        myeditor =  mysharedPreferences.edit();
-        SharedPreferences genshinSharedPreferences = context.getSharedPreferences("genshin", Context.MODE_PRIVATE);
-        String genshinText = genshinSharedPreferences.getString("genshin", "uid为空");
-        TextView genshinTextView = ((Activity) context).findViewById(R.id.genshinTextView);
-        genshinTextView.setText("原神uid: " + genshinText);
-        SharedPreferences xqtdSharedPreferences = context.getSharedPreferences("xqtd", Context.MODE_PRIVATE);
-        String xqtdText = xqtdSharedPreferences.getString("xqtd", "uid为空");
-        TextView xqtdTextView = ((Activity) context).findViewById(R.id.xqtdTextView);
-        xqtdTextView.setText("铁道uid: " + xqtdText);
-        SharedPreferences cookiesPreferences = context.getSharedPreferences("cookie", Context.MODE_PRIVATE);
-        String cookiestext = cookiesPreferences.getString("cookie", "null");
-        TextView cookiesText = ((Activity) context).findViewById(R.id.cookies);
-        if (!cookiestext.equals("null")){
-            cookiesText.setText("cookie: 已添加");
+    public static String getDS(String salt, long t, String r) {
+        String params = String.format("salt=%s&t=%d&r=%s", salt, t, r);
+        System.out.println(params);
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(params.getBytes("UTF-8"));
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+            String encryptMd5 = sb.toString();
+            return t + "," + r + "," + encryptMd5;
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+            e.printStackTrace();
         }
-        if (RandomStringGenerator.getUUID(MainActivity.this).equals("null")){
-            RandomStringGenerator.saveUUID(RandomStringGenerator.generateUUID(), MainActivity.this);
-        }
-        if (RandomStringGenerator.readRandomString(MainActivity.this).equals("null")){
-            RandomStringGenerator.saveRandomString(MainActivity.this, RandomStringGenerator.generateRandomString());
-        }
-        if (mysSwitchState){
-            genshin();
-        }
-        if (xqtdSwitchState){
-            xqtd();
-        }
+        return null;
     }
+    protected static String Xqtd(String uid, String cookie, Context context) {
+        String url = "https://api-takumi.mihoyo.com/event/luna/sign";
+        String[] arr = {"c78eik", "5inm7p", "edm91m", "9k18gf", "0hh40n", "ojk2g2", "ag55ec", "80d6la"};
+        long t = System.currentTimeMillis() / 1000;
+        String salt = "QCRgj6bHHQvS0Rz03loexYSXpuiO3DZ6";
+        Random random = new Random();
+        String r = arr[random.nextInt(8)];
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                .build();
+        MediaType mediaType = MediaType.parse("application/json;charset=UTF-8");
+        String ds = getDS(salt, t, r);
+        RequestBody body = RequestBody.create(mediaType, String.format("{\"act_id\":\"e202304121516551\",\"region\":\"prod_gf_cn\",\"uid\":\"%s\",\"lang\":\"zh-cn\"}", uid));
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .addHeader("Host", "api-takumi.mihoyo.com")
+                .addHeader("Connection", "keep-alive")
+                .addHeader("DS", ds)
+                .addHeader("Origin", "https://webstatic.mihoyo.com")
+                .addHeader("x-rpc-app_version", "2.52.1")
+                .addHeader("User-Agent", "Mozilla/5.0 (Linux; " + "Android " +  Build.VERSION.RELEASE  + "; " +  Build.MODEL + " Build/" + Build.ID + ";wv" + ") AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/92.0.4515.131 Mobile Safari/537.36 miHoYoBBS/2.52.1")
+                .addHeader("x-rpc-device_id", RandomStringGenerator.getUUID(context))
+                .addHeader("Accept", "application/json, text/plain, */*")
+                .addHeader("Sec-Fetch-Dest", "empty")
+                .addHeader("Content-Type", "application/json;charset=UTF-8")
+                .addHeader("x-rpc-client_type", "5")
+                .addHeader("X-Requested-With", "com.mihoyo.hyperion")
+                .addHeader("Sec-Fetch-Site", "same-site")
+                .addHeader("Referer", "https://webstatic.mihoyo.com/bbs/event/signin/hkrpg/e202304121516551.html?bbs_auth_required=true&act_id=e202304121516551&bbs_auth_required=true&bbs_presentation_style=fullscreen&utm_source=bbs&utm_medium=mys&utm_campaign=icon")
+                .addHeader("Accept-Language", "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7")
+                .addHeader("Cookie", cookie)
+                .build();
+        try {
+            Response response = client.newCall(request).execute();
+            String responseData = response.body().string();
+            return responseData;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "发生错误";
+    }
+
+
 }
