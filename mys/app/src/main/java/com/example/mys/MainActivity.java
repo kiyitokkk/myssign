@@ -82,10 +82,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected static String Genshin(String uid, String cookie, Context context) {
-        String url = "https://api-takumi.mihoyo.com/event/bbs_sign_reward/sign";
+        String url = "https://api-takumi.mihoyo.com/event/luna/sign";
         String[] arr = {"c78eik", "5inm7p", "edm91m", "9k18gf", "0hh40n", "ojk2g2", "ag55ec", "80d6la"};
         long t = System.currentTimeMillis() / 1000;
-        String salt = "QCRgj6bHHQvS0Rz03loexYSXpuiO3DZ6";
+        String salt = "NxZo0qhBAkihjgnEBXfrMX05Vy3wjFOf";
         Random random = new Random();
         String r = arr[random.nextInt(8)];
         OkHttpClient client = new OkHttpClient.Builder()
@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
                 .header("x-rpc-device_name", device)
                 .header("x-rpc-device_fp", RandomStringGenerator.readRandomString(context))
                 .header("x-rpc-client_type", "5")
-                .header("x-rpc-app_version", "2.52.1")
+                .header("x-rpc-app_version", "2.68.1")
                 .header("User-Agent", "Mozilla/5.0 (Linux; " + "Android " +  Build.VERSION.RELEASE  + "; " +  Build.MODEL + " Build/" + Build.ID + ";wv" + ") AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/92.0.4515.131 Mobile Safari/537.36 miHoYoBBS/2.52.1")
                 .header("x-rpc-device_id", RandomStringGenerator.getUUID(context))
                 .header("Accept", "application/json, text/plain, */*")
@@ -128,7 +128,6 @@ public class MainActivity extends AppCompatActivity {
         try {
             Response response = client.newCall(request).execute();
             String responseData = response.body().string();
-
             return responseData;
         } catch (IOException e) {
             e.printStackTrace();
@@ -157,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
         String url = "https://api-takumi.mihoyo.com/event/luna/sign";
         String[] arr = {"c78eik", "5inm7p", "edm91m", "9k18gf", "0hh40n", "ojk2g2", "ag55ec", "80d6la"};
         long t = System.currentTimeMillis() / 1000;
-        String salt = "QCRgj6bHHQvS0Rz03loexYSXpuiO3DZ6";
+        String salt = "NxZo0qhBAkihjgnEBXfrMX05Vy3wjFOf";
         Random random = new Random();
         String r = arr[random.nextInt(8)];
         OkHttpClient client = new OkHttpClient.Builder()
@@ -173,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
                 .addHeader("Connection", "keep-alive")
                 .addHeader("DS", ds)
                 .addHeader("Origin", "https://webstatic.mihoyo.com")
-                .addHeader("x-rpc-app_version", "2.52.1")
+                .addHeader("x-rpc-app_version", "2.68.1")
                 .addHeader("User-Agent", "Mozilla/5.0 (Linux; " + "Android " +  Build.VERSION.RELEASE  + "; " +  Build.MODEL + " Build/" + Build.ID + ";wv" + ") AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/92.0.4515.131 Mobile Safari/537.36 miHoYoBBS/2.52.1")
                 .addHeader("x-rpc-device_id", RandomStringGenerator.getUUID(context))
                 .addHeader("Accept", "application/json, text/plain, */*")
